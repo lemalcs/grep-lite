@@ -1,7 +1,102 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::io::prelude::*;
+use regex::Regex;
+use clap::{App, Arg};
+
+// Run with this command:
+// `cargo run -- pattern_to_search path_to_file`
+// Where
+// pattern_to_search is the pattern to search for.
+// path_to_file is the path of file where to search for.
+
+fn main() {
+    // Build a command argument parser with only one of it
+    let args = App::new("grep-lite")
+    .version("0.1")
+    .about("Search for patterns")
+    .arg(Arg::with_name("pattern")
+        .help("The pattern to search for")
+        .takes_value(true)
+        .required(true))
+    .arg(Arg::with_name("input")
+        .help("File to search")
+        .takes_value(true)
+        .required(true))
+    .get_matches();
+
+    // Extract pattern argument
+    let pattern = args.value_of("pattern").unwrap();
+
+    let re = Regex::new(pattern).unwrap(); // unwraps a Result or crashes if an error occurs.
+    
+    let input = args.value_of("input").unwrap();
+    let f = File::open(input).unwrap();
+    let reader = BufReader::new(f);
+
+    for line_ in reader.lines(){
+        let line = line_.unwrap(); // unwrap at the risk of crashing if an error occurs
+        match re.find(&line){
+            Some(_) => print!("{}", line),
+            None => (),
+        }
+    }
+}
+
+fn find_with_command_args(){
+
+    // Build a command argument parser with only one of it
+    let args = App::new("grep-lite")
+    .version("0.1")
+    .about("Search for patterns")
+    .arg(Arg::with_name("pattern")
+        .help("The pattern to search for")
+        .takes_value(true)
+        .required(true))
+    .get_matches();
+
+    // Extract pattern argument
+    let pattern = args.value_of("pattern").unwrap();
+
+    let re = Regex::new(pattern).unwrap(); // unwraps a Result or crashes if an error occurs.
+
+    // let search_term = "picture";
+    let quote = "Every face, every shop, bedroom window, public-house, and 
+    dark square in a picture, feverishly turned-in search of what?
+    It is the same with books. What do you seek through millions of pages?";
+
+    for line in quote.lines(){
+        let contains_substring = re.find(line);
+        match contains_substring{
+            Some(_) => println!("{}", line),
+            None => (), // `()` can be though of as a null placeholder
+        }
+    }
+}
+
+fn find_with_regex(){
+
+    let re = Regex::new("picture").unwrap(); // unwraps a Result or crashes if an error occurs.
+
+    // let search_term = "picture";
+    let quote = "Every face, every shop, bedroom window, public-house, and 
+    dark square in a picture, feverishly turned-in search of what?
+    It is the same with books. What do you seek through millions of pages?";
+
+    for line in quote.lines(){
+        let contains_substring = re.find(line);
+        match contains_substring{
+            Some(_) => println!("{}", line),
+            None => (), // `()` can be though of as a null placeholder
+        }
+    }
+}
+
+
 // Store n lines of context around a match, for instance:
 // If we have a text of 5 lines and the match is at line 2
 // then store line 1, 3 and 4 (line 2 is also included in results)
-fn main() {
+fn find_with_context(){
     let ctx_lines = 2;
     let needle =  "oo";
     let haystack = "\
