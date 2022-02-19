@@ -1,8 +1,20 @@
 use std::fs::File;
+use std::io;
 use std::io::BufReader;
 use std::io::prelude::*;
 use regex::Regex;
 use clap::{App, Arg};
+
+fn process_lines<T: BufRead + Sized>(reader: T, re:Regex){
+    for line_ in reader.lines(){
+        let line = line_.unwrap();
+        match re.find(&line){
+            Some(_) => println!("{}", line),
+            None => (),
+        }
+    }
+}
+
 
 // Run with this command:
 // `cargo run -- pattern_to_search path_to_file`
@@ -22,27 +34,45 @@ fn main() {
     .arg(Arg::with_name("input")
         .help("File to search")
         .takes_value(true)
-        .required(true))
+        .required(false))
     .get_matches();
 
     // Extract pattern argument
     let pattern = args.value_of("pattern").unwrap();
 
     let re = Regex::new(pattern).unwrap(); // unwraps a Result or crashes if an error occurs.
-    
-    let input = args.value_of("input").unwrap();
-    let f = File::open(input).unwrap();
-    let reader = BufReader::new(f);
 
-    for line_ in reader.lines(){
-        let line = line_.unwrap(); // unwrap at the risk of crashing if an error occurs
-        match re.find(&line){
-            Some(_) => print!("{}", line),
-            None => (),
-        }
+    let input = args.value_of("input").unwrap_or("-");
+
+    if input=="-"{
+        let stdin = io::stdin();
+
+        // To terminate standard input
+        // In Windows press
+        // Ctrl + Z then <return>
+
+        // In Linux an macOS press
+        // Ctrl + D
+        let reader = stdin.lock();
+        process_lines(reader, re);
+    }else{
+        let f = File::open(input).unwrap();
+        let reader = BufReader::new(f);
+
+        process_lines(reader, re);
     }
+
+
+    // for line_ in reader.lines(){
+    //     let line = line_.unwrap(); // unwrap at the risk of crashing if an error occurs
+    //     match re.find(&line){
+    //         Some(_) => print!("{}", line),
+    //         None => (),
+    //     }
+    // }
 }
 
+#[allow(dead_code)]
 fn find_with_command_args(){
 
     // Build a command argument parser with only one of it
@@ -61,7 +91,7 @@ fn find_with_command_args(){
     let re = Regex::new(pattern).unwrap(); // unwraps a Result or crashes if an error occurs.
 
     // let search_term = "picture";
-    let quote = "Every face, every shop, bedroom window, public-house, and 
+    let quote = "Every face, every shop, bedroom window, public-house, and
     dark square in a picture, feverishly turned-in search of what?
     It is the same with books. What do you seek through millions of pages?";
 
@@ -74,12 +104,13 @@ fn find_with_command_args(){
     }
 }
 
+#[allow(dead_code)]
 fn find_with_regex(){
 
     let re = Regex::new("picture").unwrap(); // unwraps a Result or crashes if an error occurs.
 
     // let search_term = "picture";
-    let quote = "Every face, every shop, bedroom window, public-house, and 
+    let quote = "Every face, every shop, bedroom window, public-house, and
     dark square in a picture, feverishly turned-in search of what?
     It is the same with books. What do you seek through millions of pages?";
 
@@ -96,6 +127,7 @@ fn find_with_regex(){
 // Store n lines of context around a match, for instance:
 // If we have a text of 5 lines and the match is at line 2
 // then store line 1, 3 and 4 (line 2 is also included in results)
+#[allow(dead_code)]
 fn find_with_context(){
     let ctx_lines = 2;
     let needle =  "oo";
@@ -109,7 +141,7 @@ What do you seek
 through millions of pages?";
 
     // Holds line numbers where matches occur
-    let mut tags:Vec<usize> = vec![]; 
+    let mut tags:Vec<usize> = vec![];
 
     // Holds each context lines in a vector
     let mut ctx:Vec<Vec<(usize, String)>> = vec![];
@@ -118,8 +150,8 @@ through millions of pages?";
         if line.contains(needle){
             tags.push(i);
         }
-        
-        // No explicit type signature is needed as it can be inferred 
+
+        // No explicit type signature is needed as it can be inferred
         // via the definition of `ctx` variable
         let v = Vec::with_capacity(2*ctx_lines + 1);
         // Vec<T> performs best when a size hint is provided
@@ -151,7 +183,7 @@ through millions of pages?";
 
     for local_ctx in ctx.iter(){
 
-        // `ref line` informs the compiler that we want to borrow this value 
+        // `ref line` informs the compiler that we want to borrow this value
         // rather than move it
         for &(i, ref line) in local_ctx.iter(){
             let line_num = i+1;
